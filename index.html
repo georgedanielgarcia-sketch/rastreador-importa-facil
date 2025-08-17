@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Rastreo de Envíos | Importa Fácil</title>
+  <style>
+    body{font-family:Segoe UI,Arial;background:#f5f6fa;display:flex;flex-direction:column;align-items:center;padding:2rem}
+    .card{background:#fff;border-radius:12px;padding:2rem;box-shadow:0 0 15px rgba(0,0,0,.05);max-width:500px;width:100%}
+    h2{margin-top:0;text-align:center;color:#2c3e50}
+    input{width:100%;padding:.75rem;margin-top:1rem;border:1px solid #ccc;border-radius:8px;font-size:1rem}
+    button{width:100%;padding:.75rem;margin-top:1rem;background:#3498db;color:#fff;border:0;border-radius:8px;font-size:1rem;cursor:pointer}
+    button:hover{background:#2980b9}
+    #res{margin-top:2rem;padding:1rem;background:#ecf0f1;border-radius:8px;border-left:5px solid #3498db;font-size:1rem}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Rastreo de Envíos</h2>
+    <input id="trk" placeholder="Ej: DEL12345" />
+    <button onclick="buscar()">Buscar</button>
+    <div id="res"></div>
+  </div>
+
+  <script>
+    /* PEGA AQUÍ TU URL REAL /exec DE APPS SCRIPT */
+    const API_URL = "https://script.google.com/macros/s/AKfycbxCUD4TEGr7mkbaJz440ksKy6FXErp6Xpum3zaZmxo1XIx041IWSxc3F1-T-ZrJmVmCFQ/exec";
+
+    const $ = (q)=>document.querySelector(q);
+    async function buscar(){
+      const t = $('#trk').value.trim().toUpperCase();
+      const res = $('#res');
+      if(!t){ res.textContent='⚠️ Ingresá un número de tracking.'; return; }
+      res.textContent='🔎 Buscando...';
+      try{
+        // form-urlencoded evita preflight y funciona perfecto con Apps Script
+        const body = new URLSearchParams({ tracking:t, ua:navigator.userAgent||'' });
+        const r = await fetch(API_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded'},
+          body
+        });
+        const data = await r.json();
+        if(!r.ok || !data.ok) throw new Error(data.error||'Error');
+        if(!data.results?.length){ res.innerHTML='❌ Envío no encontrado. Verificá el número.'; return; }
+        const x = data.results[0];
+        res.innerHTML = `
+          <p><strong>Tracking:</strong> ${x.tracking||''}</p>
+          <p><strong># de almacén:</strong> ${x.almacen||''}</p>
+          <p><strong>Peso:</strong> ${x.peso??''}</p>
+          <p><strong>Estado:</strong> ${x.estado||''}</p>
+          <p><strong>Ubicación:</strong> ${x.ubicacion||''}</p>
+          <p><strong>Fecha:</strong> ${x.fecha ? new Date(x.fecha).toLocaleString() : 'Sin fecha'}</p>`;
+      }catch(e){ res.textContent='❌ Error: '+e.message; }
+    }
+  </script>
+</body>
+</html>
